@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Feed Explorer</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <h1>AI Feed Explorer</h1>
+    <input type="file" id="opmlFile" accept=".opml,.xml">
+    <select id="timeFilter">
+      <option value="1">Last 1 hour</option>
+      <option value="6">Last 6 hours</option>
+      <option value="12">Last 12 hours</option>
+      <option value="24" selected>Last 24 hours</option>
+      <option value="168">Last 7 days</option>
+      <option value="720">Last 30 days</option>
+    </select>
+  </header>
+
+  <main id="feedContainer">
+    <p>Upload an OPML file to see the latest AI news.</p>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
