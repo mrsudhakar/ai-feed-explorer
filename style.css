@@ -1,48 +1,62 @@
 body {
-  font-family: Arial, sans-serif;
+  font-family: 'Inter', sans-serif;
   margin: 0;
-  padding: 0;
-  background: #f8f9fa;
-  color: #333;
+  background: #f5f6fa;
 }
 
 header {
-  background: #222;
-  color: #fff;
-  padding: 1rem;
+  position: sticky;
+  top: 0;
+  background: white;
+  padding: 15px;
+  border-bottom: 1px solid #ddd;
   display: flex;
   flex-wrap: wrap;
-  gap: 1rem;
   align-items: center;
+  gap: 15px;
 }
 
 h1 {
+  flex: 1;
   margin: 0;
-  font-size: 1.5rem;
-  flex-grow: 1;
 }
 
-#timeFilter, #opmlFile {
-  padding: 0.3rem;
+.filter {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
-main {
-  padding: 1rem;
+#timeFilter {
+  padding: 5px;
+  font-size: 14px;
+}
+
+#status {
+  font-size: 14px;
+  color: #666;
+}
+
+#feedContainer {
+  padding: 15px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 15px;
 }
 
 .feed-item {
-  background: #fff;
-  padding: 1rem;
-  margin-bottom: 1rem;
-  border-radius: 6px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  background: white;
+  padding: 15px;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
 
 .feed-item h3 {
-  margin: 0 0 0.5rem;
+  margin-top: 0;
+  font-size: 16px;
 }
 
 .feed-item time {
-  font-size: 0.9rem;
-  color: #555;
+  font-size: 12px;
+  color: #888;
 }
