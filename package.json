@@ -1,0 +1,14 @@
+{
+  "name": "ai-rss-fetcher",
+  "version": "1.0.0",
+  "description": "Fetch RSS feeds listed in feedlist.opml and build feeds.json (for GitHub Pages).",
+  "main": "scripts/fetch_feeds.js",
+  "scripts": {
+    "start": "node scripts/fetch_feeds.js"
+  },
+  "dependencies": {
+    "rss-parser": "^3.12.0",
+    "p-limit": "^3.1.0",
+    "fast-xml-parser": "^4.2.4"
+  }
+}
