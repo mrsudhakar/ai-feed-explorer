@@ -1,27 +1,19 @@
-document.getElementById('opmlFile').addEventListener('change', handleFileUpload);
 document.getElementById('timeFilter').addEventListener('change', () => {
   if (window.feedData) renderFeeds(window.feedData);
 });
 
-// Auto-load OPML on page start if available
 window.addEventListener('DOMContentLoaded', () => {
-  fetch('feedlist.opml')
-    .then(res => {
-      if (!res.ok) throw new Error("No feedlist.opml found");
-      return res.text();
-    })
-    .then(opmlText => parseOPML(opmlText))
-    .catch(err => console.log("Auto-load skipped:", err.message));
+  loadOPML('feedlist.opml');
 });
 
-async function handleFileUpload(e) {
-  const file = e.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = function(event) {
-    parseOPML(event.target.result);
-  };
-  reader.readAsText(file);
+async function loadOPML(file) {
+  setStatus("Loading feeds...");
+  try {
+    const opmlText = await fetch(file).then(r => r.text());
+    parseOPML(opmlText);
+  } catch {
+    setStatus("No OPML file found. Please upload one.");
+  }
 }
 
 async function parseOPML(opmlText) {
@@ -29,52 +21,48 @@ async function parseOPML(opmlText) {
   const xmlDoc = parser.parseFromString(opmlText, "text/xml");
   const outlines = xmlDoc.querySelectorAll("outline[type='rss']");
 
-  const feeds = [];
-  outlines.forEach(outline => {
-    feeds.push({
-      title: outline.getAttribute("title"),
-      url: outline.getAttribute("xmlUrl")
-    });
-  });
+  const feeds = Array.from(outlines).map(o => ({
+    title: o.getAttribute("title"),
+    url: o.getAttribute("xmlUrl")
+  }));
 
-  let allItems = [];
+  window.feedData = [];
+  let loadedCount = 0;
+
   for (let feed of feeds) {
-    try {
-      const rssText = await fetchFeed(feed.url);
-      const items = parseRSS(rssText, feed.title);
-      allItems = allItems.concat(items);
-    } catch (err) {
-      console.error("Error fetching", feed.url, err);
-    }
+    fetchFeed(feed.url, feed.title)
+      .then(items => {
+        window.feedData = window.feedData.concat(items);
+        loadedCount++;
+        setStatus(`Loaded ${loadedCount}/${feeds.length} feeds...`);
+        renderFeeds(window.feedData);
+      })
+      .catch(err => {
+        loadedCount++;
+        console.error(`Error fetching ${feed.url}`, err);
+        setStatus(`Loaded ${loadedCount}/${feeds.length} feeds...`);
+      });
   }
-
-  window.feedData = allItems;
-  renderFeeds(allItems);
 }
 
-async function fetchFeed(url) {
+async function fetchFeed(url, source) {
   const proxy = "https://api.allorigins.win/raw?url=";
   const res = await fetch(proxy + encodeURIComponent(url));
   if (!res.ok) throw new Error("Failed to fetch feed");
-  return await res.text();
+  const text = await res.text();
+  return parseRSS(text, source);
 }
 
 function parseRSS(xmlString, sourceTitle) {
   const parser = new DOMParser();
   const xml = parser.parseFromString(xmlString, "text/xml");
   const items = xml.querySelectorAll("item");
-  const result = [];
-
-  items.forEach(item => {
-    result.push({
-      title: item.querySelector("title")?.textContent || "No title",
-      link: item.querySelector("link")?.textContent || "#",
-      pubDate: new Date(item.querySelector("pubDate")?.textContent || Date.now()),
-      source: sourceTitle
-    });
-  });
-
-  return result;
+  return Array.from(items).map(item => ({
+    title: item.querySelector("title")?.textContent || "No title",
+    link: item.querySelector("link")?.textContent || "#",
+    pubDate: new Date(item.querySelector("pubDate")?.textContent || Date.now()),
+    source: sourceTitle
+  }));
 }
 
 function renderFeeds(items) {
@@ -89,9 +77,11 @@ function renderFeeds(items) {
     .sort((a, b) => b.pubDate - a.pubDate);
 
   if (filtered.length === 0) {
-    container.innerHTML = "<p>No items in this time range.</p>";
+    setStatus(`No news in last ${hoursLimit} hours`);
     return;
   }
+
+  setStatus(`Showing ${filtered.length} items from last ${hoursLimit} hours`);
 
   filtered.forEach(item => {
     const el = document.createElement('div');
@@ -102,4 +92,8 @@ function renderFeeds(items) {
     `;
     container.appendChild(el);
   });
+}
+
+function setStatus(msg) {
+  document.getElementById('status').textContent = msg;
 }
