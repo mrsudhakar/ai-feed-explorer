@@ -3,44 +3,56 @@ document.getElementById('timeFilter').addEventListener('change', () => {
   if (window.feedData) renderFeeds(window.feedData);
 });
 
+// Auto-load OPML on page start if available
+window.addEventListener('DOMContentLoaded', () => {
+  fetch('feedlist.opml')
+    .then(res => {
+      if (!res.ok) throw new Error("No feedlist.opml found");
+      return res.text();
+    })
+    .then(opmlText => parseOPML(opmlText))
+    .catch(err => console.log("Auto-load skipped:", err.message));
+});
+
 async function handleFileUpload(e) {
   const file = e.target.files[0];
   if (!file) return;
-
   const reader = new FileReader();
-  reader.onload = async function(event) {
-    const parser = new DOMParser();
-    const xmlDoc = parser.parseFromString(event.target.result, "text/xml");
-    const outlines = xmlDoc.querySelectorAll("outline[type='rss']");
-
-    const feeds = [];
-    outlines.forEach(outline => {
-      feeds.push({
-        title: outline.getAttribute("title"),
-        url: outline.getAttribute("xmlUrl")
-      });
-    });
-
-    // Fetch all feeds
-    let allItems = [];
-    for (let feed of feeds) {
-      try {
-        const rssText = await fetchFeed(feed.url);
-        const items = parseRSS(rssText, feed.title);
-        allItems = allItems.concat(items);
-      } catch (err) {
-        console.error("Error fetching", feed.url, err);
-      }
-    }
-
-    window.feedData = allItems;
-    renderFeeds(allItems);
+  reader.onload = function(event) {
+    parseOPML(event.target.result);
   };
   reader.readAsText(file);
 }
 
+async function parseOPML(opmlText) {
+  const parser = new DOMParser();
+  const xmlDoc = parser.parseFromString(opmlText, "text/xml");
+  const outlines = xmlDoc.querySelectorAll("outline[type='rss']");
+
+  const feeds = [];
+  outlines.forEach(outline => {
+    feeds.push({
+      title: outline.getAttribute("title"),
+      url: outline.getAttribute("xmlUrl")
+    });
+  });
+
+  let allItems = [];
+  for (let feed of feeds) {
+    try {
+      const rssText = await fetchFeed(feed.url);
+      const items = parseRSS(rssText, feed.title);
+      allItems = allItems.concat(items);
+    } catch (err) {
+      console.error("Error fetching", feed.url, err);
+    }
+  }
+
+  window.feedData = allItems;
+  renderFeeds(allItems);
+}
+
 async function fetchFeed(url) {
-  // Use CORS proxy for browser fetch
   const proxy = "https://api.allorigins.win/raw?url=";
   const res = await fetch(proxy + encodeURIComponent(url));
   if (!res.ok) throw new Error("Failed to fetch feed");
